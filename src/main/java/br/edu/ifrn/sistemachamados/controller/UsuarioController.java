@@ -1,8 +1,10 @@
 package br.edu.ifrn.sistemachamados.controller;
 
+import br.edu.ifrn.sistemachamados.dto.ChamadoResponse;
 import br.edu.ifrn.sistemachamados.dto.PaginaResponse;
 import br.edu.ifrn.sistemachamados.dto.UsuarioRequest;
 import br.edu.ifrn.sistemachamados.dto.UsuarioResponse;
+import br.edu.ifrn.sistemachamados.service.ChamadoService;
 import br.edu.ifrn.sistemachamados.service.UsuarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import java.net.URI;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final ChamadoService chamadoService;
 
     @PostMapping
     public ResponseEntity<UsuarioResponse> criar(@Valid @RequestBody UsuarioRequest request,
@@ -43,6 +46,12 @@ public class UsuarioController {
     @GetMapping("/{id}")
     public UsuarioResponse buscarPorId(@PathVariable Long id) {
         return usuarioService.buscarPorId(id);
+    }
+
+    // Chamados abertos pelo usuário (solicitante) ou atribuídos a ele (técnico)
+    @GetMapping("/{id}/chamados")
+    public PaginaResponse<ChamadoResponse> listarChamados(@PathVariable Long id, Pageable pageable) {
+        return chamadoService.listarPorUsuario(id, pageable);
     }
 
     @PutMapping("/{id}")
