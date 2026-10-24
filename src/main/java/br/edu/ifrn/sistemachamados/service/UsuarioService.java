@@ -1,14 +1,14 @@
 package br.edu.ifrn.sistemachamados.service;
 
 import br.edu.ifrn.sistemachamados.dto.PaginaResponse;
+import br.edu.ifrn.sistemachamados.dto.UsuarioFiltro;
 import br.edu.ifrn.sistemachamados.dto.UsuarioRequest;
 import br.edu.ifrn.sistemachamados.dto.UsuarioResponse;
 import br.edu.ifrn.sistemachamados.exception.RecursoNaoEncontradoException;
 import br.edu.ifrn.sistemachamados.exception.RegraNegocioException;
-import br.edu.ifrn.sistemachamados.model.Setor;
 import br.edu.ifrn.sistemachamados.model.Usuario;
-import br.edu.ifrn.sistemachamados.model.enums.TipoUsuario;
 import br.edu.ifrn.sistemachamados.repository.UsuarioRepository;
+import br.edu.ifrn.sistemachamados.repository.UsuarioSpecifications;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -32,8 +32,8 @@ public class UsuarioService {
         return UsuarioResponse.de(usuarioRepository.save(usuario));
     }
 
-    public PaginaResponse<UsuarioResponse> listar(Pageable pageable) {
-        return PaginaResponse.de(usuarioRepository.findAll(pageable).map(UsuarioResponse::de));
+    public PaginaResponse<UsuarioResponse> listar(UsuarioFiltro filtro, Pageable pageable) {
+        return PaginaResponse.de(usuarioRepository.findAll(UsuarioSpecifications.comFiltro(filtro), pageable).map(UsuarioResponse::de));
     }
 
     public UsuarioResponse buscarPorId(Long id) {
@@ -60,20 +60,7 @@ public class UsuarioService {
         usuario.setEmail(request.email());
         usuario.setMatricula(request.matricula());
         usuario.setTipo(request.tipo());
-        usuario.setSetor(resolverSetor(request));
-    }
-
-    // Técnico pertence obrigatoriamente a um setor; solicitante não pertence a nenhum
-    private Setor resolverSetor(UsuarioRequest request) {
-        if (request.tipo() == TipoUsuario.TECNICO) {
-            if (request.setorId() == null) {
-                throw new RegraNegocioException("Usuário do tipo TECNICO deve informar o setorId");
-            }
-            return setorService.buscarEntidade(request.setorId());
-        }
-        if (request.setorId() != null) {
-            throw new RegraNegocioException("Usuário do tipo SOLICITANTE não pertence a um setor");
-        }
-        return null;
+        // A coerência entre tipo e setorId já foi validada no DTO; aqui só falta garantir que o setor existe (404)
+        usuario.setSetor(request.setorId() != null ? setorService.buscarEntidade(request.setorId()) : null);
     }
 }

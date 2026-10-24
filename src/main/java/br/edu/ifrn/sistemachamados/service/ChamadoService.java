@@ -3,6 +3,7 @@ package br.edu.ifrn.sistemachamados.service;
 import br.edu.ifrn.sistemachamados.dto.AssumirChamadoRequest;
 import br.edu.ifrn.sistemachamados.dto.CancelarChamadoRequest;
 import br.edu.ifrn.sistemachamados.dto.ChamadoDetalheResponse;
+import br.edu.ifrn.sistemachamados.dto.ChamadoFiltro;
 import br.edu.ifrn.sistemachamados.dto.ChamadoRequest;
 import br.edu.ifrn.sistemachamados.dto.ChamadoResponse;
 import br.edu.ifrn.sistemachamados.dto.InteracaoRequest;
@@ -18,6 +19,7 @@ import br.edu.ifrn.sistemachamados.model.enums.Prioridade;
 import br.edu.ifrn.sistemachamados.model.enums.StatusChamado;
 import br.edu.ifrn.sistemachamados.model.enums.TipoUsuario;
 import br.edu.ifrn.sistemachamados.repository.ChamadoRepository;
+import br.edu.ifrn.sistemachamados.repository.ChamadoSpecifications;
 import br.edu.ifrn.sistemachamados.repository.InteracaoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -59,15 +61,16 @@ public class ChamadoService {
         return ChamadoResponse.de(chamadoRepository.save(chamado));
     }
 
-    public PaginaResponse<ChamadoResponse> listar(Pageable pageable) {
-        return PaginaResponse.de(chamadoRepository.findAll(pageable).map(ChamadoResponse::de));
+    public PaginaResponse<ChamadoResponse> listar(ChamadoFiltro filtro, Pageable pageable) {
+        return PaginaResponse.de(chamadoRepository.findAll(ChamadoSpecifications.comFiltro(filtro), pageable)
+                .map(ChamadoResponse::de));
     }
 
-    public PaginaResponse<ChamadoResponse> listarPorUsuario(Long usuarioId, Pageable pageable) {
+    public PaginaResponse<ChamadoResponse> listarPorUsuario(Long usuarioId, StatusChamado status, Pageable pageable) {
         // Garante 404 para usuário inexistente em vez de uma lista vazia
         usuarioService.buscarEntidade(usuarioId);
         return PaginaResponse.de(chamadoRepository
-                .findBySolicitanteIdOrTecnicoId(usuarioId, usuarioId, pageable)
+                .findAll(ChamadoSpecifications.doUsuario(usuarioId, status), pageable)
                 .map(ChamadoResponse::de));
     }
 

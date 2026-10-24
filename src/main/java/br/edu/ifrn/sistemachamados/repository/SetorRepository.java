@@ -2,8 +2,9 @@ package br.edu.ifrn.sistemachamados.repository;
 
 import br.edu.ifrn.sistemachamados.model.Setor;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface SetorRepository extends JpaRepository<Setor, Long> {
+public interface SetorRepository extends JpaRepository<Setor, Long>, JpaSpecificationExecutor<Setor> {
 
     boolean existsBySigla(String sigla);
 

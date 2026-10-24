@@ -1,6 +1,7 @@
 package br.edu.ifrn.sistemachamados.dto;
 
 import br.edu.ifrn.sistemachamados.model.enums.TipoUsuario;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,7 +24,14 @@ public record UsuarioRequest(
         @NotNull(message = "O tipo é obrigatório")
         TipoUsuario tipo,
 
-        // Obrigatório apenas para TECNICO (validado no Service)
+        // Obrigatório apenas para TECNICO (validado em isSetorCoerenteComTipo)
         Long setorId
 ) {
+
+    // Validação entre dois campos: técnico pertence a um setor, solicitante não.
+    // Dado inválido da própria requisição, por isso 400 (via @Valid) e não 409
+    @AssertTrue(message = "O setorId é obrigatório para TECNICO e não deve ser informado para SOLICITANTE")
+    public boolean isSetorCoerenteComTipo() {
+        return tipo == null || (tipo == TipoUsuario.TECNICO) == (setorId != null);
+    }
 }

@@ -2,6 +2,7 @@ package br.edu.ifrn.sistemachamados.controller;
 
 import br.edu.ifrn.sistemachamados.dto.CategoriaResponse;
 import br.edu.ifrn.sistemachamados.dto.PaginaResponse;
+import br.edu.ifrn.sistemachamados.dto.SetorFiltro;
 import br.edu.ifrn.sistemachamados.dto.SetorRequest;
 import br.edu.ifrn.sistemachamados.dto.SetorResponse;
 import br.edu.ifrn.sistemachamados.service.CategoriaService;
@@ -9,6 +10,7 @@ import br.edu.ifrn.sistemachamados.service.SetorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,9 +42,12 @@ public class SetorController {
         return ResponseEntity.created(uri).body(resposta);
     }
 
+    // Os filtros chegam pela query string e o Spring os agrupa no record. Ex.: GET /setores?nome=tec
     @GetMapping
-    public PaginaResponse<SetorResponse> listar(Pageable pageable) {
-        return setorService.listar(pageable);
+    // Sem ?sort= na URL, ordena por nome para a resposta ter ordem estável
+    public PaginaResponse<SetorResponse> listar(SetorFiltro filtro,
+                                                @PageableDefault(sort = "nome") Pageable pageable) {
+        return setorService.listar(filtro, pageable);
     }
 
     @GetMapping("/{id}")
@@ -51,7 +56,8 @@ public class SetorController {
     }
 
     @GetMapping("/{id}/categorias")
-    public PaginaResponse<CategoriaResponse> listarCategorias(@PathVariable Long id, Pageable pageable) {
+    public PaginaResponse<CategoriaResponse> listarCategorias(@PathVariable Long id,
+                                                              @PageableDefault(sort = "nome") Pageable pageable) {
         return categoriaService.listarPorSetor(id, pageable);
     }
 

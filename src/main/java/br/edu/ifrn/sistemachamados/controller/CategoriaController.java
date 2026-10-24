@@ -1,5 +1,6 @@
 package br.edu.ifrn.sistemachamados.controller;
 
+import br.edu.ifrn.sistemachamados.dto.CategoriaFiltro;
 import br.edu.ifrn.sistemachamados.dto.CategoriaRequest;
 import br.edu.ifrn.sistemachamados.dto.CategoriaResponse;
 import br.edu.ifrn.sistemachamados.dto.PaginaResponse;
@@ -7,6 +8,7 @@ import br.edu.ifrn.sistemachamados.service.CategoriaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,9 +39,11 @@ public class CategoriaController {
         return ResponseEntity.created(uri).body(resposta);
     }
 
+    // Ex.: GET /categorias?nome=rede&setorId=1
     @GetMapping
-    public PaginaResponse<CategoriaResponse> listar(Pageable pageable) {
-        return categoriaService.listar(pageable);
+    public PaginaResponse<CategoriaResponse> listar(CategoriaFiltro filtro,
+                                                    @PageableDefault(sort = "nome") Pageable pageable) {
+        return categoriaService.listar(filtro, pageable);
     }
 
     @GetMapping("/{id}")

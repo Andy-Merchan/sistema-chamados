@@ -3,6 +3,7 @@ package br.edu.ifrn.sistemachamados.controller;
 import br.edu.ifrn.sistemachamados.dto.AssumirChamadoRequest;
 import br.edu.ifrn.sistemachamados.dto.CancelarChamadoRequest;
 import br.edu.ifrn.sistemachamados.dto.ChamadoDetalheResponse;
+import br.edu.ifrn.sistemachamados.dto.ChamadoFiltro;
 import br.edu.ifrn.sistemachamados.dto.ChamadoRequest;
 import br.edu.ifrn.sistemachamados.dto.ChamadoResponse;
 import br.edu.ifrn.sistemachamados.dto.InteracaoRequest;
@@ -13,6 +14,8 @@ import br.edu.ifrn.sistemachamados.service.ChamadoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,9 +45,13 @@ public class ChamadoController {
         return ResponseEntity.created(uri).body(resposta);
     }
 
+    // Ex.: GET /chamados?status=ABERTO&setorId=1&prioridade=ALTA&page=0&size=10&sort=dataAbertura,desc
+    // @Valid ativa a validação do período (dataInicio <= dataFim) declarada no ChamadoFiltro
     @GetMapping
-    public PaginaResponse<ChamadoResponse> listar(Pageable pageable) {
-        return chamadoService.listar(pageable);
+    public PaginaResponse<ChamadoResponse> listar(@Valid ChamadoFiltro filtro,
+                                                  @PageableDefault(sort = "dataAbertura", direction = Sort.Direction.DESC)
+                                                  Pageable pageable) {
+        return chamadoService.listar(filtro, pageable);
     }
 
     @GetMapping("/{id}")

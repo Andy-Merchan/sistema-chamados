@@ -1,6 +1,7 @@
 package br.edu.ifrn.sistemachamados.service;
 
 import br.edu.ifrn.sistemachamados.dto.PaginaResponse;
+import br.edu.ifrn.sistemachamados.dto.SetorFiltro;
 import br.edu.ifrn.sistemachamados.dto.SetorRequest;
 import br.edu.ifrn.sistemachamados.dto.SetorResponse;
 import br.edu.ifrn.sistemachamados.exception.RecursoNaoEncontradoException;
@@ -9,6 +10,7 @@ import br.edu.ifrn.sistemachamados.model.Setor;
 import br.edu.ifrn.sistemachamados.repository.CategoriaRepository;
 import br.edu.ifrn.sistemachamados.repository.ChamadoRepository;
 import br.edu.ifrn.sistemachamados.repository.SetorRepository;
+import br.edu.ifrn.sistemachamados.repository.SetorSpecifications;
 import br.edu.ifrn.sistemachamados.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -35,8 +37,8 @@ public class SetorService {
         return SetorResponse.de(setorRepository.save(setor));
     }
 
-    public PaginaResponse<SetorResponse> listar(Pageable pageable) {
-        return PaginaResponse.de(setorRepository.findAll(pageable).map(SetorResponse::de));
+    public PaginaResponse<SetorResponse> listar(SetorFiltro filtro, Pageable pageable) {
+        return PaginaResponse.de(setorRepository.findAll(SetorSpecifications.comFiltro(filtro), pageable).map(SetorResponse::de));
     }
 
     public SetorResponse buscarPorId(Long id) {
