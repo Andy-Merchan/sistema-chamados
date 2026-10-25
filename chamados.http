@@ -1,0 +1,429 @@
+# Requisições da API Sistema de Chamados IFRN
+# Executar no IntelliJ (botão ▶ ao lado de cada requisição ou "Run All").
+# Pré-requisito: API rodando em http://localhost:8080 (docker compose up).
+#
+# Dados iniciais (migrations V2/V3) usados nos exemplos:
+#   Setores:     1 = COTIC, 2 = MANUT
+#   Categorias:  1 = Rede e Internet (COTIC), 2 = Equipamentos de Informática (COTIC),
+#                3 = Elétrica (MANUT), 4 = Climatização (MANUT)
+#   Usuários:    1, 2, 5, 6 = SOLICITANTE | 3, 7 = TECNICO da COTIC | 4, 8 = TECNICO da MANUT
+#
+# As requisições que criam recursos guardam o id retornado (client.global.set)
+# para as seguintes. Por isso, rode o arquivo de cima para baixo.
+
+@baseUrl = http://localhost:8080
+
+########################################################################
+# 1. SETORES
+########################################################################
+
+### Listar setores (paginado, ordenado por nome)
+GET {{baseUrl}}/setores
+
+### Filtrar setores por nome (contém, sem diferenciar maiúsculas)
+GET {{baseUrl}}/setores?nome=tecnologia
+
+### Buscar setor por id
+GET {{baseUrl}}/setores/1
+
+### Listar categorias de um setor
+GET {{baseUrl}}/setores/1/categorias
+
+### Criar setor -> 201
+POST {{baseUrl}}/setores
+Content-Type: application/json
+
+{
+  "nome": "Laboratórios",
+  "sigla": "LAB{{$timestamp}}"
+}
+
+> {% client.global.set("setorNovoId", response.body.id); %}
+
+### Criar setor com sigla duplicada -> 409
+POST {{baseUrl}}/setores
+Content-Type: application/json
+
+{
+  "nome": "Outra COTIC",
+  "sigla": "COTIC"
+}
+
+### Criar setor sem nome -> 400
+POST {{baseUrl}}/setores
+Content-Type: application/json
+
+{
+  "nome": "",
+  "sigla": "XYZ"
+}
+
+### Atualizar setor
+PUT {{baseUrl}}/setores/{{setorNovoId}}
+Content-Type: application/json
+
+{
+  "nome": "Laboratórios de Informática",
+  "sigla": "LABINF{{$timestamp}}"
+}
+
+### Excluir setor sem vínculos -> 204
+DELETE {{baseUrl}}/setores/{{setorNovoId}}
+
+### Excluir setor com categorias vinculadas -> 409 (regra 8)
+DELETE {{baseUrl}}/setores/1
+
+### Buscar setor inexistente -> 404
+GET {{baseUrl}}/setores/9999
+
+########################################################################
+# 2. CATEGORIAS
+########################################################################
+
+### Listar categorias
+GET {{baseUrl}}/categorias
+
+### Filtrar categorias por nome e setor
+GET {{baseUrl}}/categorias?nome=rede&setorId=1
+
+### Buscar categoria por id
+GET {{baseUrl}}/categorias/1
+
+### Criar categoria -> 201
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nome": "Impressoras",
+  "descricao": "Impressoras e scanners",
+  "setorId": 1
+}
+
+> {% client.global.set("categoriaNovaId", response.body.id); %}
+
+### Criar categoria em setor inexistente -> 404
+POST {{baseUrl}}/categorias
+Content-Type: application/json
+
+{
+  "nome": "Teste",
+  "descricao": "Setor não existe",
+  "setorId": 9999
+}
+
+### Atualizar categoria
+PUT {{baseUrl}}/categorias/{{categoriaNovaId}}
+Content-Type: application/json
+
+{
+  "nome": "Impressoras e Scanners",
+  "descricao": "Impressoras, scanners e multifuncionais",
+  "setorId": 1
+}
+
+### Excluir categoria sem chamados -> 204
+DELETE {{baseUrl}}/categorias/{{categoriaNovaId}}
+
+########################################################################
+# 3. USUÁRIOS
+########################################################################
+
+### Listar usuários
+GET {{baseUrl}}/usuarios
+
+### Filtrar usuários por tipo e setor
+GET {{baseUrl}}/usuarios?tipo=TECNICO&setorId=1
+
+### Filtrar usuários por nome
+GET {{baseUrl}}/usuarios?nome=merchan
+
+### Buscar usuário por id
+GET {{baseUrl}}/usuarios/1
+
+### Criar solicitante -> 201
+POST {{baseUrl}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Ana Souza",
+  "email": "ana.{{$timestamp}}@escolar.ifrn.edu.br",
+  "matricula": "2026{{$timestamp}}",
+  "tipo": "SOLICITANTE"
+}
+
+> {% client.global.set("usuarioNovoId", response.body.id); %}
+
+### Criar técnico (setorId obrigatório para TECNICO) -> 201
+POST {{baseUrl}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Carlos Lima",
+  "email": "carlos.{{$timestamp}}@ifrn.edu.br",
+  "matricula": "T{{$timestamp}}",
+  "tipo": "TECNICO",
+  "setorId": 2
+}
+
+### Atualizar usuário
+PUT {{baseUrl}}/usuarios/{{usuarioNovoId}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Souza Lima",
+  "email": "ana.lima.{{$timestamp}}@escolar.ifrn.edu.br",
+  "matricula": "2026{{$timestamp}}",
+  "tipo": "SOLICITANTE"
+}
+
+### Criar usuário com email duplicado -> 409
+POST {{baseUrl}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Andy Duplicado",
+  "email": "andy.merchan@escolar.ifrn.edu.br",
+  "matricula": "20269999999999",
+  "tipo": "SOLICITANTE"
+}
+
+### Criar usuário com email mal formatado -> 400
+POST {{baseUrl}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Email Inválido",
+  "email": "email-invalido",
+  "matricula": "20268888888888",
+  "tipo": "SOLICITANTE"
+}
+
+### Criar técnico sem setor -> 400
+POST {{baseUrl}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Técnico Sem Setor",
+  "email": "sem.setor.{{$timestamp}}@ifrn.edu.br",
+  "matricula": "T0000001",
+  "tipo": "TECNICO"
+}
+
+########################################################################
+# 4. CHAMADOS - ciclo ABERTO -> EM_ATENDIMENTO -> RESOLVIDO
+########################################################################
+
+### Abrir chamado (sem prioridade: nasce MEDIA e ABERTO) -> 201 (regra 1)
+POST {{baseUrl}}/chamados
+Content-Type: application/json
+
+{
+  "titulo": "Wi-Fi do laboratório 3 sem conexão",
+  "descricao": "Nenhum computador do laboratório consegue acessar a internet desde a manhã",
+  "local": "Bloco B - Laboratório 3",
+  "categoriaId": 1,
+  "solicitanteId": 1
+}
+
+> {% client.global.set("chamadoId", response.body.id); %}
+
+### Abrir chamado com usuário TECNICO -> 409 (regra 2)
+POST {{baseUrl}}/chamados
+Content-Type: application/json
+
+{
+  "titulo": "Teste",
+  "descricao": "Técnico tentando abrir chamado",
+  "local": "Bloco A",
+  "categoriaId": 1,
+  "solicitanteId": 3
+}
+
+### Abrir chamado sem campos obrigatórios -> 400
+POST {{baseUrl}}/chamados
+Content-Type: application/json
+
+{
+  "titulo": "",
+  "categoriaId": 1
+}
+
+### Detalhar chamado (com interações)
+GET {{baseUrl}}/chamados/{{chamadoId}}
+
+### Assumir com técnico de outro setor -> 409 (regra 3)
+PATCH {{baseUrl}}/chamados/{{chamadoId}}/assumir
+Content-Type: application/json
+
+{
+  "tecnicoId": 8
+}
+
+### Assumir chamado -> 200 (status EM_ATENDIMENTO)
+PATCH {{baseUrl}}/chamados/{{chamadoId}}/assumir
+Content-Type: application/json
+
+{
+  "tecnicoId": 3
+}
+
+### Registrar interação do técnico atribuído -> 201
+POST {{baseUrl}}/chamados/{{chamadoId}}/interacoes
+Content-Type: application/json
+
+{
+  "autorId": 3,
+  "texto": "Verificando o switch do laboratório"
+}
+
+### Registrar interação do solicitante -> 201
+POST {{baseUrl}}/chamados/{{chamadoId}}/interacoes
+Content-Type: application/json
+
+{
+  "autorId": 1,
+  "texto": "Obrigado, o problema continua no computador 12 também"
+}
+
+### Registrar interação de usuário não envolvido -> 409 (regra 7)
+POST {{baseUrl}}/chamados/{{chamadoId}}/interacoes
+Content-Type: application/json
+
+{
+  "autorId": 2,
+  "texto": "Também estou sem internet"
+}
+
+### Cancelar chamado EM_ATENDIMENTO -> 409 (regra 5)
+PATCH {{baseUrl}}/chamados/{{chamadoId}}/cancelar
+Content-Type: application/json
+
+{
+  "solicitanteId": 1
+}
+
+### Resolver por técnico que não é o atribuído -> 409 (regra 4)
+PATCH {{baseUrl}}/chamados/{{chamadoId}}/resolver
+Content-Type: application/json
+
+{
+  "tecnicoId": 7,
+  "solucao": "Reiniciei o roteador"
+}
+
+### Resolver sem solução -> 400 (regra 4)
+PATCH {{baseUrl}}/chamados/{{chamadoId}}/resolver
+Content-Type: application/json
+
+{
+  "tecnicoId": 3,
+  "solucao": ""
+}
+
+### Resolver chamado -> 200 (status RESOLVIDO e dataFechamento preenchida)
+PATCH {{baseUrl}}/chamados/{{chamadoId}}/resolver
+Content-Type: application/json
+
+{
+  "tecnicoId": 3,
+  "solucao": "Switch do laboratório substituído e conexão restabelecida"
+}
+
+### Interação em chamado RESOLVIDO -> 409 (regra 6)
+POST {{baseUrl}}/chamados/{{chamadoId}}/interacoes
+Content-Type: application/json
+
+{
+  "autorId": 1,
+  "texto": "Voltou a funcionar, obrigado!"
+}
+
+########################################################################
+# 5. CHAMADOS - ciclo ABERTO -> CANCELADO
+########################################################################
+
+### Abrir chamado com prioridade ALTA -> 201
+POST {{baseUrl}}/chamados
+Content-Type: application/json
+
+{
+  "titulo": "Ar-condicionado da sala 10 pingando",
+  "descricao": "Água caindo sobre as mesas próximas à janela",
+  "local": "Bloco A - Sala 10",
+  "prioridade": "ALTA",
+  "categoriaId": 4,
+  "solicitanteId": 2
+}
+
+> {% client.global.set("chamado2Id", response.body.id); %}
+
+### Cancelar por outro solicitante -> 409 (regra 5)
+PATCH {{baseUrl}}/chamados/{{chamado2Id}}/cancelar
+Content-Type: application/json
+
+{
+  "solicitanteId": 1
+}
+
+### Cancelar pelo próprio solicitante -> 200 (status CANCELADO)
+PATCH {{baseUrl}}/chamados/{{chamado2Id}}/cancelar
+Content-Type: application/json
+
+{
+  "solicitanteId": 2
+}
+
+### Assumir chamado CANCELADO -> 409 (regra 6)
+PATCH {{baseUrl}}/chamados/{{chamado2Id}}/assumir
+Content-Type: application/json
+
+{
+  "tecnicoId": 4
+}
+
+########################################################################
+# 6. LISTAGENS DE CHAMADOS COM FILTROS E PAGINAÇÃO
+########################################################################
+
+### Listar chamados (padrão: page=0, size=10, sort=dataAbertura,desc)
+GET {{baseUrl}}/chamados
+
+### Exemplo do enunciado: filtros combinados + paginação + ordenação
+GET {{baseUrl}}/chamados?status=ABERTO&setorId=1&prioridade=ALTA&page=0&size=10&sort=dataAbertura,desc
+
+### Filtrar por status e técnico
+GET {{baseUrl}}/chamados?status=RESOLVIDO&tecnicoId=3
+
+### Filtrar por categoria e solicitante
+GET {{baseUrl}}/chamados?categoriaId=4&solicitanteId=2
+
+### Filtrar por período de abertura (datas inclusivas)
+GET {{baseUrl}}/chamados?dataInicio=2026-01-01&dataFim=2026-12-31
+
+### Período inválido (dataInicio depois de dataFim) -> 400
+GET {{baseUrl}}/chamados?dataInicio=2026-12-31&dataFim=2026-01-01
+
+### size acima do máximo: é reduzido para 50
+GET {{baseUrl}}/chamados?size=100
+
+### Status inválido na query string -> 400
+GET {{baseUrl}}/chamados?status=FECHADO
+
+### Chamados de um solicitante
+GET {{baseUrl}}/usuarios/1/chamados
+
+### Chamados atribuídos a um técnico, filtrando por status
+GET {{baseUrl}}/usuarios/3/chamados?status=RESOLVIDO
+
+### Chamado inexistente -> 404
+GET {{baseUrl}}/chamados/9999
+
+########################################################################
+# 7. REGRA 8 - exclusão com chamados vinculados
+########################################################################
+
+### Excluir categoria com chamados vinculados -> 409
+DELETE {{baseUrl}}/categorias/1
+
+### Excluir setor com chamados vinculados -> 409
+DELETE {{baseUrl}}/setores/2
