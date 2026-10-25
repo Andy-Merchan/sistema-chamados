@@ -14,8 +14,6 @@ Hoje, quando um projetor para de funcionar ou o Wi-Fi do laboratório cai, o avi
 
 ## Como executar
 
-### Com Docker (recomendado)
-
 Pré-requisito: apenas o [Docker](https://www.docker.com/products/docker-desktop/) instalado e em execução.
 
 ```bash
@@ -40,28 +38,6 @@ O que cada arquivo faz:
 - **`Dockerfile`** (multi-stage): a primeira etapa compila o projeto com Maven e JDK 21 (`-DskipTests`, pois o teste `contextLoads` precisa de banco); a segunda copia apenas o `.jar` para uma imagem com JRE 21, menor e sem código-fonte.
 - **`docker-compose.yml`**: sobe o PostgreSQL (com volume `chamados-dados` e *healthcheck*) e a API, que só inicia quando o banco está pronto. A API acessa o banco pela rede interna do Compose (`db:5432`); a porta do banco não é publicada no host.
 - **`.dockerignore`**: evita enviar `target/`, `.git/`, `.idea/` e `.env` para o build.
-
-### Localmente (sem Docker para a API)
-
-Requer Java 21 e um PostgreSQL com o banco `sistema_chamados` criado.
-
-```bash
-# Linux/macOS
-export DB_PASSWORD=sua_senha
-./mvnw spring-boot:run
-
-# Windows (PowerShell)
-$env:DB_PASSWORD = "sua_senha"
-.\mvnw.cmd spring-boot:run
-```
-
-Variáveis de ambiente aceitas (o `application.properties` não tem senha fixa):
-
-| Variável | Padrão |
-|----------|--------|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/sistema_chamados` |
-| `DB_USERNAME` | `chamados_app` |
-| `DB_PASSWORD` | *(obrigatória)* |
 
 ## Arquitetura
 
