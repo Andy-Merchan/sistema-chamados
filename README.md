@@ -10,6 +10,7 @@ Hoje, quando um projetor para de funcionar ou o Wi-Fi do laboratório cai, o avi
 - Spring Web MVC, Spring Data JPA e Bean Validation
 - PostgreSQL 17 e Flyway (migrations)
 - Lombok
+- springdoc-openapi (documentação OpenAPI e Swagger UI)
 - Docker e Docker Compose
 
 ## Como executar
@@ -123,6 +124,13 @@ As ações sobre o chamado usam **PATCH** porque alteram apenas parte dele (stat
 ### Coleção de requisições
 
 O arquivo [`chamados.http`](chamados.http) contém todas as requisições acima, incluindo os casos de erro de cada regra. No IntelliJ, basta abri-lo e clicar em ▶ (ou *Run All*) com a API rodando. As requisições que criam recursos guardam o `id` retornado para as seguintes, então o arquivo deve ser executado de cima para baixo.
+
+### Documentação OpenAPI (Swagger)
+
+Com a API rodando, a documentação é gerada automaticamente a partir dos controllers e DTOs pelo springdoc-openapi:
+
+- **Swagger UI**: http://localhost:8080/swagger-ui.html — permite testar cada endpoint pelo navegador (*Try it out*).
+- **Documento OpenAPI (JSON)**: http://localhost:8080/v3/api-docs — pode ser importado no Swagger Editor ou no Postman.
 
 ### Dados iniciais
 
